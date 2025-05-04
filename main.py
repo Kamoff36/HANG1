@@ -17,6 +17,9 @@ class Arama(BaseModel):
 ]
 
 def analiz_et(metin):
+    print(">>> GPT analiz başlatıldı.")
+    print("Kullanıcı metni:", metin)
+
     mesaj = f"""
     Aşağıdaki kullanıcı ihtiyacını analiz et ve JSON formatında özetle:
     - Amaç
@@ -27,14 +30,20 @@ def analiz_et(metin):
     Cümle: "{metin}"
     """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Kullanıcı ihtiyacını sınıflandıran bir asistansın."},
-            {"role": "user", "content": mesaj}
-        ]
-    )
-    return eval(response.choices[0].message.content)
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Kullanıcı ihtiyacını sınıflandıran bir asistansın."},
+                {"role": "user", "content": mesaj}
+            ]
+        )
+        print(">>> GPT yanıt alındı.")
+        print("GPT Response:", response.choices[0].message.content)
+        return eval(response.choices[0].message.content)
+    except Exception as e:
+        print(">>> HATA OLUŞTU (GPT):", e)
+        raise
 
 def puanla(ihtiyac):
     sonuçlar = []
@@ -53,6 +62,9 @@ def puanla(ihtiyac):
 
 @app.post("/oner")
 async def öneri_al(arama: Arama):
-    ihtiyac = analiz_et(arama.metin)
-    sonuç = puanla(ihtiyac)
-    return {"oneriler": sonuç}
+    try:
+        ihtiyac = analiz_et(arama.metin)
+        sonuç = puanla(ihtiyac)
+        return {"oneriler": sonuç}
+    except Exception as e:
+        return {"error": str(e)}
